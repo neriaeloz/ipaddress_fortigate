@@ -1,0 +1,59 @@
+Sub ExportFortiGateCommands()
+    Dim ws As Worksheet
+    Dim lastRow As Long, i As Long
+    Dim ip As String, objName As String, groupName As String
+    Dim filePath As String
+    Dim fso As Object, fileTxt As Object
+    Dim commandText As String
+    Dim addedCommands As Boolean
+
+    On Error GoTo ErrorHandler
+
+    Set ws = ThisWorkbook.Sheets("Sheet1") ' שנה לפי שם הגיליון שלך
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+    filePath = ThisWorkbook.Path & "\fortigate_commands.txt"
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set fileTxt = fso.CreateTextFile(filePath, True)
+    
+    addedCommands = False
+
+    For i = 2 To lastRow
+        ip = Trim(ws.Cells(i, 1).Value)
+        groupName = Trim(ws.Cells(i, 3).Value)
+        
+        If ip <> "" And InStr(ip, ".") > 0 Then
+            ' שם האובייקט = כתובת ה-IP עצמה (נחליף "/" אם קיים)
+            objName = Replace(ip, "/", "-")
+            
+            commandText = ""
+            commandText = commandText & "config firewall address" & vbCrLf
+            commandText = commandText & "    edit """ & objName & """" & vbCrLf
+            commandText = commandText & "        set subnet " & ip & " 255.255.255.255" & vbCrLf
+            commandText = commandText & "    next" & vbCrLf
+            commandText = commandText & "end" & vbCrLf & vbCrLf
+
+            commandText = commandText & "config firewall addrgrp" & vbCrLf
+            commandText = commandText & "    edit """ & groupName & """" & vbCrLf
+            commandText = commandText & "        append member """ & objName & """" & vbCrLf
+            commandText = commandText & "    next" & vbCrLf
+            commandText = commandText & "end" & vbCrLf & vbCrLf
+
+            fileTxt.Write commandText
+            addedCommands = True
+        End If
+    Next i
+    
+    fileTxt.Close
+    
+    If addedCommands Then
+        MsgBox "✅ קובץ הפקודות נוצר בהצלחה: " & filePath, vbInformation
+    Else
+        MsgBox "ℹ️ לא נמצאו נתונים מתאימים ליצירת פקודות. בדוק את עמודות A ו־C.", vbExclamation
+    End If
+    
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "❌ שגיאה: " & Err.Description, vbCritical
+End Sub
