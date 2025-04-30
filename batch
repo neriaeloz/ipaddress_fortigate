@@ -1,0 +1,34 @@
+@echo off
+setlocal enabledelayedexpansion
+
+set OUTPUT=fortigate_commands.txt
+set GROUP=VPN_Group
+
+> %OUTPUT% echo.
+
+:LOOP
+set /p IP=Enter IP address (or press Enter to finish): 
+if "%IP%"=="" goto END
+
+set NAME=%IP:/=-%
+
+echo config firewall address >> %OUTPUT%
+echo     edit "%NAME%" >> %OUTPUT%
+echo         set subnet %IP% 255.255.255.255 >> %OUTPUT%
+echo     next >> %OUTPUT%
+echo end >> %OUTPUT%
+echo. >> %OUTPUT%
+
+echo config firewall addrgrp >> %OUTPUT%
+echo     edit "%GROUP%" >> %OUTPUT%
+echo         append member "%NAME%" >> %OUTPUT%
+echo     next >> %OUTPUT%
+echo end >> %OUTPUT%
+echo. >> %OUTPUT%
+
+goto LOOP
+
+:END
+echo.
+echo ✅ Commands saved to %OUTPUT%
+pause
